@@ -89,7 +89,7 @@ Win32 call the runner under test uses (`SetNamedSecurityInfoW`, SecurityInfo `0x
 | Run this plugin's repair (`icacls /grant:r`, exit code 0) | `repair: {"ok":true}`                   |
 | Retry the same call               | `rc = 0`, label becomes `S:AI(ML;;NW;;;LW)` |
 
-![Recorded repair transcript: rc = 5 before the repair, rc = 0 with the Low label after it](docs/terminal-output.svg)
+![Illustrative transcript from a real repair run (not a screen capture): rc = 5 before the repair, rc = 0 with the Low label after it](docs/terminal-output.svg)
 
 ### 2.2 Driving all three stages with **DSH's own runner** (Problems A + B)
 
@@ -165,12 +165,15 @@ dsh-windows-acl-preflight/
 │   ├── propagate.js      # tree propagation orchestration: icacls /inheritance:e /T + helper call
 │   └── acl-helper.ps1    # P/Invoke writes Low labels object by object (ASCII-only, readable by PS 5.1)
 ├── test/
-│   └── offline.test.mjs  # 13 tests: node --test test/offline.test.mjs
+│   ├── offline.test.mjs  # 13 tests: the ACL behaviour itself (Windows-only cases skip elsewhere)
+│   └── manifest.test.mjs # 9 tests: manifest + package.json consistency (offline, platform-independent)
+├── docs/
+│   └── terminal-output.svg  # the transcript printed in §2 (hand-rendered, not a screen capture)
 ├── install.ps1           # idempotent install/uninstall script (manual route)
 ├── LICENSE               # MIT
 ├── .gitattributes        # LF-only checkout (acl-helper.ps1 is deliberately pure ASCII)
 ├── .gitignore
-├── .github/workflows/test.yml  # CI: windows + ubuntu × node 20/22/24 running node --test
+├── .github/workflows/test.yml  # CI: windows + ubuntu × node 20/22/24 — the ACL suite, then the manifest check
 ├── README.md             # English (this file)
 └── README.zh.md          # Simplified Chinese
 ```
@@ -343,10 +346,12 @@ Example:
 
 ## 8. Tests
 
-In this package's directory:
+In this package's directory — the first form also works inside a confined session
+(no child process is spawned), the second is the plain runner invocation and what CI uses:
 
 ```powershell
-node --test test/offline.test.mjs
+node -e "import('./test/offline.test.mjs')"    # confined-friendly
+node --test test/offline.test.mjs              # unconfined shell / CI
 ```
 
 All 13 tests really run on Windows (including an integration test that actually invokes `icacls` and executes the bundled label helper).
@@ -358,13 +363,13 @@ directory instead (handy for inspecting things afterwards), point it at a **fres
 
 ```powershell
 $env:DSH_ACL_PREFLIGHT_TEST_DIR = 'E:\acl-preflight-test'
-node --test test/offline.test.mjs
+node -e "import('./test/offline.test.mjs')"
 ```
 
 (With that variable set, the directory is created and granted full control to the current user, but it is **not deleted**, so you have to clean it up yourself.)
 On non-Windows platforms, the ACL-related cases skip automatically.
-A separate, platform-independent manifest check also validates `dsh-plugin.json` and `package.json` against these rules
-(`node --test test/manifest.test.mjs`); it needs neither Windows nor the network, so CI runs it on every OS.
+A separate, platform-independent manifest suite — 9 hand-written checks over `dsh-plugin.json` and
+`package.json`, not a JSON-Schema validator (`node --test test/manifest.test.mjs`) — needs neither Windows nor the network, so CI runs it on every OS.
 
 ---
 

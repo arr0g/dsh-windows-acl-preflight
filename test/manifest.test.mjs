@@ -3,8 +3,10 @@
  *
  *   node --test test/manifest.test.mjs
  *
- * These are pure filesystem-and-JSON assertions: no network, no `icacls`, no
- * Windows-only API. They therefore run on every CI leg, and they guard the
+ * These are hand-written filesystem-and-JSON assertions — **not** a JSON-Schema
+ * validator: every rule below is spelled out by hand, so anything the upstream
+ * schema grows must be added here explicitly. There is no network, no `icacls`
+ * and no Windows-only API. They therefore run on every CI leg, and they guard the
  * promises this repository makes by shipping `dsh-plugin.json` plus a
  * display-facing `package.json`:
  *
@@ -30,7 +32,7 @@ const manifest = JSON.parse(read('dsh-plugin.json'))
 const pkg = JSON.parse(read('package.json'))
 
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/
-const NAMESPACED_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)+$/
+const NAMESPACED_ID = /^[a-z][a-z0-9]*(?:[.-][a-z0-9][a-z0-9-]*)+$/
 /** A 40-hex revision, either as a path segment or as `?rev=`. */
 const PINNED_REVISION = /(?:\/|\?rev=)[0-9a-f]{40}(?:\/|$)/
 
@@ -46,7 +48,9 @@ const SYNTHETIC_CAPABILITY_SIDS = new Set([
 
 /** Every text file that ships in the repository. */
 const SHIPPED_TEXT_FILES = [
+  '.gitattributes',
   '.github/workflows/test.yml',
+  '.gitignore',
   'LICENSE',
   'README.md',
   'README.zh.md',
@@ -151,7 +155,9 @@ test('package.json stays installable by pnpm and displayable by the plugin manag
 
   // The bundle patch and install.ps1 must mount the plugin under the same id,
   // or the two installation routes would produce two different plugins.
-  const entryId = read('install.ps1').match(/\$entryId = '([^']+)'/)[1]
+  const entryIdMatch = read('install.ps1').match(/\$entryId = '([^']+)'/)
+  assert.ok(entryIdMatch, 'install.ps1 must still declare `$entryId = ...`')
+  const entryId = entryIdMatch[1]
   assert.ok(read('cordis.patch.yml').includes(`id: ${entryId}`), `cordis.patch.yml must mount id: ${entryId}`)
 })
 
@@ -172,4 +178,13 @@ test('the tree carries no path or account from the machine it was written on', (
       assert.ok(SYNTHETIC_CAPABILITY_SIDS.has(sid), `${file} must not contain a real capability SID (found ${sid})`)
     }
   }
+})
+
+test('the manifest declares nothing the schema would reject at the root', () => {
+  // dsh-std's dsh-plugin-0.15.schema.json sets `additionalProperties: false` on
+  // the root, so an unknown top-level key is a schema violation. This test locks
+  // the known root keys; `x-` extensions stay allowed.
+  const KNOWN_ROOT_KEYS = ['$schema', 'manifestVersion', 'id', 'name', 'version', 'license', 'source', 'facets', 'requires', 'permissions', 'contributes', 'subscriptions']
+  const extra = Object.keys(manifest).filter((key) => !key.startsWith('x-') && !KNOWN_ROOT_KEYS.includes(key))
+  assert.deepEqual(extra, [], 'dsh-plugin.json must not carry unknown root keys (schema: additionalProperties: false)')
 })

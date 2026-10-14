@@ -4,7 +4,7 @@
 
 [![test](https://github.com/arr0g/dsh-windows-acl-preflight/actions/workflows/test.yml/badge.svg)](https://github.com/arr0g/dsh-windows-acl-preflight/actions/workflows/test.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![platform: Windows](https://img.shields.io/badge/platform-Windows-0078d4.svg)](README.zh.md)
+[![platform: Windows](https://img.shields.io/badge/platform-Windows-0078d4.svg)](README.zh.md#9-已知限制)
 [![node 20 | 22 | 24](https://img.shields.io/badge/node-20%20%7C%2022%20%7C%2024-339933.svg)](.github/workflows/test.yml)
 
 让**新工作区开箱即用**：不用再手工修 ACL，`pwsh` 一开就能跑；
@@ -89,7 +89,7 @@ runner 完全相同的 Win32 调用（`SetNamedSecurityInfoW`，SecurityInfo `0x
 | 运行本插件的修复（`icacls /grant:r`，退出码 0） | `repair: {"ok":true}`                   |
 | 同一次调用重试                           | `rc = 0`，标签变为 `S:AI(ML;;NW;;;LW)`       |
 
-![实录的修复过程：修前 rc = 5，修后 rc = 0 且带上 Low 标签](docs/terminal-output.svg)
+![来自真实修复过程的示意输出（不是屏幕截图）：修前 rc = 5，修后 rc = 0 且带上 Low 标签](docs/terminal-output.svg)
 
 ### 2.2 用 **DSH 自己的 runner** 跑通三个舞台（问题 A + B）
 
@@ -165,13 +165,16 @@ dsh-windows-acl-preflight/
 │   ├── propagate.js      # 树传播编排：icacls /inheritance:e /T + 调 helper
 │   └── acl-helper.ps1    # P/Invoke 逐对象写 Low 标签（ASCII-only，PS 5.1 也能读）
 ├── test/
-│   └── offline.test.mjs  # 13 项测试：node --test test/offline.test.mjs
+│   ├── offline.test.mjs  # ACL 行为本身 13 项（非 Windows 自动 skip）
+│   └── manifest.test.mjs # 清单与 package.json 一致性 9 项（离线、跨平台）
+├── docs/
+│   └── terminal-output.svg  # §2 里那段输出（手工排版，不是截图）
 ├── install.ps1           # 幂等安装/卸载脚本（手工路线）
 ├── LICENSE               # MIT
 ├── .gitattributes        # 强制 LF 检出（acl-helper.ps1 特意保持纯 ASCII）
 ├── .gitignore
-├── .github/workflows/test.yml  # CI：windows + ubuntu × node 20/22/24 跑 node --test
-├── README.md             # 英文版（本文件）
+├── .github/workflows/test.yml  # CI：windows + ubuntu × node 20/22/24 —— 先跑 ACL 套件，再跑清单校验
+├── README.md             # 英文版
 └── README.zh.md          # 简体中文
 ```
 
@@ -343,10 +346,12 @@ bundle 路线下 `config` 写在这里，而不是写进包内那份 `cordis.pat
 
 ## 8. 测试
 
-在本包目录下：
+在本包目录下——第一种形式在受控会话里也能跑（不会创建子进程），
+第二种是常规 runner 调法，也是 CI 用的：
 
 ```powershell
-node --test test/offline.test.mjs
+node -e "import('./test/offline.test.mjs')"    # 受控会话可用
+node --test test/offline.test.mjs              # 非受控 shell / CI
 ```
 
 13 项测试在 Windows 上全部真跑（含一项真实调用 `icacls`、并执行自带标签 helper 的集成测试）。
@@ -358,13 +363,13 @@ node --test test/offline.test.mjs
 
 ```powershell
 $env:DSH_ACL_PREFLIGHT_TEST_DIR = 'E:\acl-preflight-test'
-node --test test/offline.test.mjs
+node -e "import('./test/offline.test.mjs')"
 ```
 
 （指定该变量时，目录会被创建、被授予当前用户完全控制，但**不会被删除**，需要你自行清理。）
 在非 Windows 平台上，与 ACL 相关的用例会自动 skip。
-另有一项与平台无关的清单检查，会按上述规则校验 `dsh-plugin.json` 与 `package.json`
-（`node --test test/manifest.test.mjs`）；它不需要 Windows、也不联网，CI 在每个 OS 上都会跑。
+另有一套与平台无关的清单测试——9 项手写检查（覆盖 `dsh-plugin.json` 与 `package.json`，不是
+JSON Schema 校验器）——不需要 Windows、也不联网，CI 在每个 OS 上都会跑。
 
 ---
 
