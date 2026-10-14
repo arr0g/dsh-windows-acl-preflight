@@ -1,0 +1,13 @@
+# Dependencies: this plugin has none, so a lockfile must never be committed
+node_modules/
+.pnpm/
+pnpm-lock.yaml
+
+# install.ps1 leaves these next to cordis.patch.yml
+*.bak-acl-preflight-*
+
+# Editor / OS noise
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

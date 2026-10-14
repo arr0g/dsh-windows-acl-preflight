@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Windows ACL 预检",
+    "description": "自动修好 DSH 的 Windows 沙箱所需的工作区 ACL：新工作区在 workspace-write 下直接就能跑 pwsh，既不需要提权审批，也能写入工作区里早已存在的子目录。"
+  }
+}

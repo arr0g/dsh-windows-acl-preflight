@@ -1,0 +1,31 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows runs the whole suite for real (icacls + the label helper);
+        # the other OS only proves the plugin stays a no-op there.
+        os: [windows-latest, ubuntu-latest]
+        node: ['20', '22', '24']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Run the offline suite
+        run: node --test test/offline.test.mjs
+        env:
+          # Problem A only reproduces for a fresh directory DIRECTLY under a drive root,
+          # so this must stay one level below the drive root (runner.temp = D:\a\_temp).
+          DSH_ACL_PREFLIGHT_TEST_DIR: ${{ runner.temp }}/dsh-acl-preflight-ci
+      - name: Validate the plugin manifest
+        run: node --test test/manifest.test.mjs

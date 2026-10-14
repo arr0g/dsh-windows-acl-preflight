@@ -1,0 +1,12 @@
+# Keep the repository LF-only, independent of each contributor's core.autocrlf.
+# (This package ships .ps1, .js, .mjs, .json, .yml files that were authored with LF;
+#  a CRLF working copy would produce noise in every diff.)
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted.
+*.png binary
+*.ico binary
+
+# PowerShell can be read by Windows PowerShell 5.1 as ANSI when it has no BOM,
+# so lib/acl-helper.ps1 is deliberately pure ASCII with LF endings. Keep it that way.
+*.ps1 text eol=lf

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/T-Auto/dsh-std/8a15541117cb3c13ddb8f2468308691b6051d162/packages/manifest/schema/dsh-plugin-0.15.schema.json",
+  "manifestVersion": "0.15",
+  "id": "dsh-windows-acl-preflight.preflight",
+  "name": "dsh-windows-acl-preflight",
+  "version": "1.0.0",
+  "license": "MIT",
+  "source": {
+    "repository": "https://github.com/arr0g/dsh-windows-acl-preflight"
+  },
+  "facets": {
+    "host": {
+      "entry": "lib/index.js",
+      "apiVersion": "v1alpha1"
+    }
+  },
+  "requires": {
+    "contracts": []
+  },
+  "permissions": [
+    {
+      "name": "dsh-windows-acl-preflight.process.spawn",
+      "scope": "subprocess",
+      "reason": "Run icacls.exe, whoami.exe and powershell.exe to read and repair workspace ACLs before a confined command starts."
+    },
+    {
+      "name": "dsh-windows-acl-preflight.workspace.acl",
+      "scope": "security-descriptor",
+      "reason": "Grant the signed-in user Full control on the workspace root and propagate DSH's capability ACE plus the Low integrity label to pre-existing workspace subtrees."
+    }
+  ],
+  "contributes": {
+    "x-display": [
+      {
+        "icon": "./icon.png",
+        "title": "Windows ACL preflight",
+        "description": "Repairs the workspace ACL that DSH's Windows sandbox requires, so pwsh works in a new workspace under workspace-write with no escalation approval.",
+        "locales": [
+          "locale/en.json",
+          "locale/zh.json"
+        ]
+      }
+    ]
+  },
+  "subscriptions": []
+}

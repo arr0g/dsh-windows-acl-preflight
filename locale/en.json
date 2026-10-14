@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Windows ACL preflight",
+    "description": "Repairs the workspace ACL that DSH's Windows sandbox requires, so pwsh works in a new workspace under workspace-write with no escalation approval."
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "dsh-windows-acl-preflight",
+  "version": "1.0.0",
+  "description": "Repairs the Windows ACL precondition DSH's workspace-write sandbox needs, so a brand-new workspace never has to be reconfigured by hand.",
+  "license": "MIT",
+  "author": "arr0g",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arr0g/dsh-windows-acl-preflight.git"
+  },
+  "homepage": "https://github.com/arr0g/dsh-windows-acl-preflight#readme",
+  "bugs": {
+    "url": "https://github.com/arr0g/dsh-windows-acl-preflight/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "windows",
+    "acl",
+    "sandbox",
+    "icacls"
+  ],
+  "icon": "./icon.png",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.4",
+    "@deepseek-ai/dsh": ">=0.2.0-rc.2 <0.3"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "displayName": "Windows ACL preflight"
+  }
+}

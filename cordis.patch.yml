@@ -1,0 +1,9 @@
+# Bundle patch for dsh-windows-acl-preflight.
+#
+# Applied only when the package is listed in `dsh.profile.bundles` of the active
+# profile (the plugin-manager / pnpm route). When the plugin is instead mounted
+# from the profile's own cordis.patch.yml, that file carries an identical row and
+# this one is ignored.
+- insert:
+    - id: windows-acl-preflight
+      name: dsh-windows-acl-preflight
